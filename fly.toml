@@ -1,0 +1,35 @@
+app = "sshx"
+primary_region = "ewr"
+kill_signal = "SIGINT"
+kill_timeout = 90
+
+[experimental]
+  auto_rollback = true
+  cmd = ["sh", "-c", "./sshx-server --listen :: --host \"$FLY_ALLOC_ID.vm.sshx.internal:8051\""]
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8051
+  processes = ["app"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 65536
+    soft_limit = 1024
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls"]
+    [services.ports.tls_options]
+      alpn = ["h2", "http/1.1"]
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "1s"
+    restart_limit = 0
